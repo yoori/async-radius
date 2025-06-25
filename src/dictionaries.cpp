@@ -1,11 +1,34 @@
-#include "dictionaries.h"
-#include "error.h"
-#include <boost/tokenizer.hpp>
 #include <vector>
 #include <utility>
 #include <fstream>
+#include <iostream>
+
+#include <boost/tokenizer.hpp>
+#include <boost/functional/hash.hpp>
+
+#include "dictionaries.h"
+#include "error.h"
 
 using BasicDictionary = RadProto::BasicDictionary;
+
+
+std::size_t RadProto::Dictionaries::AttributeKeyHash::operator()(const AttributeKey& attribute_key) const
+{
+  std::size_t seed = 0;
+  boost::hash_combine(seed, attribute_key.code);
+  boost::hash_combine(seed, attribute_key.vendor_id);
+  return seed;
+};
+
+std::size_t RadProto::Dictionaries::UnresolvedAttributeKeyHash::operator()(
+  const UnresolvedAttributeKey& attribute_key) const
+{
+  std::size_t seed = 0;
+  boost::hash_combine(seed, attribute_key.code);
+  boost::hash_combine(seed, attribute_key.vendor_name);
+  return seed;
+};
+
 std::string BasicDictionary::name(uint32_t code) const
 {
     return m_rightDict.at(code);
@@ -67,72 +90,138 @@ void DependentDictionary::append(const DependentDictionary& dependentDict)
     for (const auto& entry: dependentDict.m_rightDict)
     {
         for (const auto& item: m_rightDict)
+        {
             if (item.second == entry.second && item.first.first == entry.first.first && item.first.second != entry.first.second)
-                throw Exception(Error::suchAttributeNameAlreadyExists, "[DependentDictionary::append]. Value name " + entry.second + " of attribute " + entry.first.first + " already exists with code " + std::to_string(item.first.second));
+            {
+                throw Exception(Error::suchAttributeNameAlreadyExists,
+                    "[DependentDictionary::append]. Value name " + entry.second + " of attribute " +
+                    entry.first.first +
+                    "(code = " + std::to_string(entry.first.second) + ") already exists with code " +
+                    std::to_string(item.first.second));
+            }
+        }
 
         m_rightDict.insert_or_assign(std::make_pair(entry.first.first, entry.first.second), entry.second);
     }
+
     for (const auto& entry: dependentDict.m_reverseDict)
         m_reverseDict.insert_or_assign(entry.first, entry.second);
 }
 
 using Dictionaries = RadProto::Dictionaries;
+
 Dictionaries::Dictionaries(const std::string& filePath)
 {
-    std::ifstream stream(filePath);
-    if (!stream)
-        throw std::runtime_error("Cannot open dictionary file " + filePath);
+  std::ifstream stream(filePath);
+  if (!stream)
+  {
+    throw std::runtime_error("Cannot open dictionary file " + filePath);
+  }
 
-    using tokenizer =  boost::tokenizer<boost::char_separator<char>>;
-    boost::char_separator<char> sep(" \t");
+  using tokenizer = boost::tokenizer<boost::char_separator<char>>;
+  boost::char_separator<char> sep(" \t");
 
-    std::string line;
-    std::string vendorName;
+  std::string line;
+  std::string vendorName;
 
-    while (std::getline(stream, line))
+  while (std::getline(stream, line))
+  {
+    tokenizer tok(line, sep);
+
+    std::vector<std::string> tokens;
+    std::copy(tok.begin(), tok.end(), std::back_inserter(tokens));
+
+    if (!tokens.empty())
     {
-        tokenizer tok(line, sep);
+      if (tokens[0] == "ATTRIBUTE")
+      {
+        const auto& attrName = tokens[1];
+        const auto& attrId = tokens[2];
 
-        std::vector<std::string> tokens;
-        for (const auto& t : tok)
-            tokens.push_back(t);
-
-        if (!tokens.empty())
+        if (attrId.find('.') == std::string::npos) // skip attrbutes with OID
         {
-            if (tokens[0] == "ATTRIBUTE")
+          const auto code = std::stoul(tokens[2]);
+          std::string attrTypeName = tokens[3];
+
+          auto size_part_pos = attrTypeName.find('[');
+          if (size_part_pos != std::string::npos)
+          {
+            attrTypeName = attrTypeName.substr(0, size_part_pos);
+          }
+
+          if (!vendorName.empty())
+          {
+            m_vendorAttributes.add(code, attrName, vendorName);
+          }
+          else
+          {
+            m_attributes.add(code, attrName);
+          }
+
+          bool resolved = true;
+          uint32_t vendor_id = 0;
+          if (!vendorName.empty())
+          {
+            try
             {
-                const auto& attrName = tokens[1];
-                const auto code = std::stoul(tokens[2]);
-                if (!vendorName.empty())
-                    m_vendorAttributes.add(code, attrName, vendorName);
-                else
-                    m_attributes.add(code, attrName);
+              vendor_id = m_vendorNames.code(vendorName);
             }
-            else if (tokens[0] == "VALUE")
+            catch(const std::exception&)
             {
-                const auto& attrNameVal = tokens[1];
-                const auto& valueName = tokens[2];
-                const auto valueCode = std::stoul(tokens[3]);
-                if (!vendorName.empty())
-                    m_vendorAttributeValues.add(valueCode, valueName, attrNameVal);
-                else
-                    m_attributeValues.add(valueCode, valueName, attrNameVal);
+              resolved = false;
             }
-            else if (tokens[0] == "VENDOR")
-                m_vendorNames.add(std::stoul(tokens[2]), tokens[1]);
-            else if (tokens[0] == "BEGIN-VENDOR")
-                vendorName = tokens[1];
-            else if (tokens[0] == "END-VENDOR")
-                vendorName.clear();
-            else if (tokens[0] == "$INCLUDE")
-            {
-                if (tokens[1].substr(0, 1) == "/")
-                    append(Dictionaries(tokens[1]));
-                else
-                    append(Dictionaries(filePath.substr(0, filePath.rfind('/') + 1) + tokens[1]));
-            }
+          }
+
+          if (resolved)
+          {
+            m_attributeTypes.emplace(AttributeKey(code, vendor_id), attrTypeName);
+          }
+          else
+          {
+            m_unresolvedAttributeTypes.emplace(
+              UnresolvedAttributeKey(code, vendorName), attrTypeName);
+          }
         }
+      }
+      else if (tokens[0] == "VALUE")
+      {
+        const auto& attrNameVal = tokens[1];
+        const auto& valueName = tokens[2];
+        const auto valueCode = std::stoul(tokens[3]);
+        if (!vendorName.empty())
+        {
+          m_vendorAttributeValues.add(valueCode, valueName, attrNameVal);
+        }
+        else
+        {
+          m_attributeValues.add(valueCode, valueName, attrNameVal);
+        }
+      }
+      else if (tokens[0] == "VENDOR")
+      {
+        m_vendorNames.add(std::stoul(tokens[2]), tokens[1]);
+      }
+      else if (tokens[0] == "BEGIN-VENDOR")
+      {
+        vendorName = tokens[1];
+      }
+      else if (tokens[0] == "END-VENDOR")
+      {
+        vendorName.clear();
+      }
+      else if (tokens[0] == "$INCLUDE")
+      {
+        if (tokens[1].substr(0, 1) == "/")
+        {
+          append(Dictionaries(tokens[1]));
+        }
+        else
+        {
+          append(Dictionaries(filePath.substr(0, filePath.rfind('/') + 1) + tokens[1]));
+        }
+      }
     }
+  }
 }
 
 void Dictionaries::append(const Dictionaries& fillingDictionaries)
@@ -142,6 +231,12 @@ void Dictionaries::append(const Dictionaries& fillingDictionaries)
     m_attributeValues.append(fillingDictionaries.m_attributeValues);
     m_vendorAttributes.append(fillingDictionaries.m_vendorAttributes);
     m_vendorAttributeValues.append(fillingDictionaries.m_vendorAttributeValues);
+    m_attributeTypes.insert(
+      fillingDictionaries.m_attributeTypes.begin(),
+      fillingDictionaries.m_attributeTypes.end());
+    m_unresolvedAttributeTypes.insert(
+      fillingDictionaries.m_unresolvedAttributeTypes.begin(),
+      fillingDictionaries.m_unresolvedAttributeTypes.end());
 }
 
 std::string Dictionaries::attributeName(uint32_t code) const
@@ -152,6 +247,12 @@ std::string Dictionaries::attributeName(uint32_t code) const
 uint32_t Dictionaries::attributeCode(const std::string& name) const
 {
     return attributes().code(name);
+}
+
+std::string Dictionaries::attributeTypeName(uint8_t code, uint32_t vendor_id) const
+{
+  auto it = m_attributeTypes.find(AttributeKey(code, vendor_id));
+  return it != m_attributeTypes.end() ? it->second : std::string();
 }
 
 std::string Dictionaries::vendorName(uint32_t code) const
@@ -192,4 +293,31 @@ std::string Dictionaries::vendorAttributeValueName(const std::string& valueName,
 uint32_t Dictionaries::vendorAttributeValueCode(const std::string& valueName, const std::string& name) const
 {
     return vendorAttributeValues().code(valueName, name);
+}
+
+std::optional<std::string>
+Dictionaries::get_attribute_type(uint8_t code, uint32_t vendor_id) const
+{
+  auto it = m_attributeTypes.find(AttributeKey(code, vendor_id));
+  if (it != m_attributeTypes.end())
+  {
+    return it->second;
+  }
+
+  return std::nullopt;
+}
+
+void
+Dictionaries::resolve()
+{
+  for (const auto& [unresolved_attr_key, attribute_type] : m_unresolvedAttributeTypes)
+  {
+    m_attributeTypes.emplace(
+      AttributeKey(
+        unresolved_attr_key.code,
+        m_vendorNames.code(unresolved_attr_key.vendor_name)),
+      attribute_type);
+  }
+
+  m_unresolvedAttributeTypes.clear();
 }

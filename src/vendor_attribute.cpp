@@ -6,8 +6,11 @@
 #include <iostream>
 
 using VendorSpecific = RadProto::VendorSpecific;
-VendorSpecific::VendorSpecific(const uint8_t* data)
+
+namespace RadProto
 {
+  VendorSpecific::VendorSpecific(const uint8_t* data)
+  {
     if (data[0] != 0)
         throw RadProto::Exception(RadProto::Error::invalidVendorSpecificAttributeId);
 
@@ -23,17 +26,22 @@ VendorSpecific::VendorSpecific(const uint8_t* data)
 
     for (size_t i = 0; i < vendorLength - 2; ++i)
         m_value[i] = data[i + 6];
-}
+  }
 
-VendorSpecific::VendorSpecific(uint32_t vendorId, uint8_t vendorType, const std::vector<uint8_t>& vendorValue)
+  VendorSpecific::VendorSpecific(uint32_t vendorId, uint8_t vendorType, const std::vector<uint8_t>& vendorValue)
     : m_vendorId(vendorId),
       m_vendorType(vendorType),
       m_value(vendorValue)
-{
-}
+  {
+  }
 
-std::vector<uint8_t> VendorSpecific::toVector() const
-{
+  const ByteArray& VendorSpecific::data() const
+  {
+    return m_value;
+  }
+
+  std::vector<uint8_t> VendorSpecific::toVector() const
+  {
     std::vector<uint8_t> attribute(m_value.size() + 8);
     attribute[0] = VENDOR_SPECIFIC;
     attribute[1] = m_value.size() + 8;
@@ -46,14 +54,17 @@ std::vector<uint8_t> VendorSpecific::toVector() const
     for (size_t i = 0; i < m_value.size(); ++i)
         attribute[i + 8] = m_value[i];
     return attribute;
-}
+  }
 
-std::string VendorSpecific::toString() const
-{
+  std::string VendorSpecific::toString() const
+  {
     std::string value;
 
     for (const auto& b : m_value)
-        value += byteToHex(b);
+    {
+      value += byteToHex(b);
+    }
 
     return value;
+  }
 }

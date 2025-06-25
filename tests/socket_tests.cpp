@@ -35,7 +35,7 @@ namespace
         BOOST_REQUIRE(!ec);
     }
 
-    void checkReceive(const error_code& ec, const std::optional<RadProto::Packet>& p, boost::asio::ip::udp::endpoint source)
+    void checkReceive(const error_code& ec, const std::optional<RadProto::Packet>& p, boost::asio::ip::udp::endpoint /*source*/)
     {
         callbackReceiveCalled = true;
         BOOST_REQUIRE(!ec);
@@ -122,7 +122,7 @@ BOOST_AUTO_TEST_CASE(TestAsyncSend)
 {
     std::array<uint8_t, 16> auth {0x1a, 0x40, 0x43, 0xc6, 0x41, 0x0a, 0x08, 0x31, 0x12, 0x16, 0x80, 0x2c, 0x3e, 0x83, 0x12, 0x45};
 
-    const std::vector<RadProto::Attribute*> attributes {new RadProto::String(1, "test"), new RadProto::Encrypted(2, "123456"), new RadProto::IpAddress(4, {127, 0, 0, 1}), new RadProto::Integer(5, 1), new RadProto::Bytes(80, {0xf3, 0xe0, 0x00, 0xe7, 0x7d, 0xeb, 0x51, 0xeb, 0x81, 0x5d, 0x52, 0x37, 0x3d, 0x06, 0xb7, 0x1b}), new RadProto::Integer(7, 1)};
+    const std::vector<RadProto::Attribute*> attributes {new RadProto::String(1, "test"), new RadProto::Encrypted(2, "123456"), new RadProto::IpAddress(4, {127, 0, 0, 1}), new RadProto::Integer<uint32_t>(5, 1), new RadProto::Bytes(80, {0xf3, 0xe0, 0x00, 0xe7, 0x7d, 0xeb, 0x51, 0xeb, 0x81, 0x5d, 0x52, 0x37, 0x3d, 0x06, 0xb7, 0x1b}), new RadProto::Integer<uint32_t>(7, 1)};
 
     std::vector<RadProto::VendorSpecific> vendorSpecific;
     vendorSpecific.push_back(RadProto::VendorSpecific(171, 1, {0, 0, 0, 3}));

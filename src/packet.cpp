@@ -3,13 +3,21 @@
 #include "attribute_types.h"
 #include <openssl/md5.h>
 #include <stdexcept>
+#include <iostream>
+#include <iomanip>
 
 using Packet = RadProto::Packet;
 
 namespace
 {
-    RadProto::Attribute* makeAttribute(uint8_t type, const uint8_t* data, size_t size, const std::string& secret, const std::array<uint8_t, 16>& auth)
+    RadProto::Attribute* makeAttribute(
+        uint8_t type,
+        const uint8_t* data,
+        size_t size,
+        const std::string& secret,
+        const std::array<uint8_t, 16>& auth)
     {
+        std::cerr << "makeAttribute: type = " << static_cast<unsigned int>(type) << std::endl;
         if (type == 1 || type == 11 || type == 18 || type == 22 || type == 34 || type == 35 || type == 60 || type == 63)
             return new RadProto::String(type, data, size);
         else if (type == 2)
@@ -19,58 +27,92 @@ namespace
         else if (type == 4 || type == 8 || type == 9 || type == 14)
             return new RadProto::IpAddress(type, data, size);
         else if (type == 5 || type == 6 || type == 7 || type == 10 || type == 12 || type == 13 || type == 15 || type == 16 || type == 27 || type == 28 || type == 29 || type == 37 || type == 38 || type == 61 || type == 62)
-            return new RadProto::Integer(type, data, size);
-        else if (type == 19 || type == 20 || type == 24 || type == 25 || type == 30 || type == 31 || type == 32 || type == 33 || type == 36 || type == 39 || type == 79 || type == 80)
+            return new RadProto::Integer<uint64_t>(type, data, size);
+        else
             return new RadProto::Bytes(type, data, size);
 
         throw RadProto::Exception(RadProto::Error::invalidAttributeType);
     }
 }
 
-Packet::Packet(const uint8_t* buffer, size_t size, const std::string& secret)
-    : m_recalcAuth(false)
+Packet::Packet(
+  const uint8_t* buffer,
+  size_t size,
+  const std::string& secret)
+  : m_recalcAuth(false)
 {
-    if (size < 20)
-        throw Exception(Error::numberOfBytesIsLessThan20);
+  /*
+  std::cout << "===================" << std::endl;
+  std::cout << std::hex << std::setfill('0') << std::setw(2);
 
-    size_t length = buffer[2] * 256 + buffer[3];
-
-    if (size < length)
-        throw Exception(Error::requestLengthIsShort);
-
-    m_type = buffer[0];
-
-    m_id = buffer[1];
-
-    for (std::size_t i = 0; i < m_auth.size(); ++i)
-        m_auth[i] = buffer[i + 4];
-
-    size_t attributeIndex = 20;
-    while (attributeIndex < length)
+  for (unsigned int i = 0; i < size; ++i)
+  {
+    if (i % 16 == 0)
     {
-        const uint8_t attributeType = buffer[attributeIndex];
-        const uint8_t attributeLength = buffer[attributeIndex + 1];
+      std::cout << std::endl;
+    }
+    std::cout << static_cast<unsigned int>(buffer[i]) << " ";
+  }
 
-        if (attributeType == VENDOR_SPECIFIC)
-            m_vendorSpecific.push_back(VendorSpecific(&buffer[attributeIndex + 2]));
-        else
-            m_attributes.push_back(makeAttribute(attributeType, &buffer[attributeIndex + 2], attributeLength - 2, secret, m_auth));
+  std::cout << std::dec;
+  std::cout << "===================" << std::endl;
+  */
 
-        attributeIndex += attributeLength;
+  if (size < 20)
+      throw Exception(Error::numberOfBytesIsLessThan20);
+
+  size_t length = buffer[2] * 256 + buffer[3];
+
+  if (size < length)
+      throw Exception(Error::requestLengthIsShort);
+
+  m_type = buffer[0];
+
+  m_id = buffer[1];
+
+  for (std::size_t i = 0; i < m_auth.size(); ++i)
+  {
+    m_auth[i] = buffer[i + 4];
+  }
+
+  size_t attributeIndex = 20;
+  while (attributeIndex < length)
+  {
+    const uint8_t attributeType = buffer[attributeIndex];
+    const uint8_t attributeLength = buffer[attributeIndex + 1];
+
+    if (attributeType == VENDOR_SPECIFIC)
+    {
+      m_vendorSpecific.emplace_back(VendorSpecific(&buffer[attributeIndex + 2]));
+    }
+    else
+    {
+        m_attributes.push_back(
+          makeAttribute(
+            attributeType,
+            &buffer[attributeIndex + 2],
+            attributeLength - 2,
+            secret,
+            m_auth));
     }
 
-    bool eapMessage = false;
-    bool messageAuthenticator = false;
-    for (const auto& a : m_attributes)
-    {
-        if (a->type() == EAP_MESSAGE)
-            eapMessage = true;
+    attributeIndex += attributeLength;
+  }
 
-        if (a->type() == MESSAGE_AUTHENTICATOR)
-            messageAuthenticator = true;
-    }
-    if (eapMessage && !messageAuthenticator)
-        throw Exception(Error::eapMessageAttributeError);
+  bool eapMessage = false;
+  bool messageAuthenticator = false;
+
+  for (const auto& a : m_attributes)
+  {
+      if (a->type() == EAP_MESSAGE)
+          eapMessage = true;
+
+      if (a->type() == MESSAGE_AUTHENTICATOR)
+          messageAuthenticator = true;
+  }
+
+  if (eapMessage && !messageAuthenticator)
+      throw Exception(Error::eapMessageAttributeError);
 }
 
 Packet::Packet(uint8_t type, uint8_t id, const std::array<uint8_t, 16>& auth, const std::vector<Attribute*>& attributes, const std::vector<VendorSpecific>& vendorSpecific)
