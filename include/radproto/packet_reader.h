@@ -15,6 +15,9 @@ namespace RadProto
       std::string secret);
 
     ConstAttributePtr
+    get_attribute(const Dictionaries::AttributeKey& attribute_key);
+
+    ConstAttributePtr
     get_attribute_by_name(const std::string& name);
 
     ConstAttributePtr

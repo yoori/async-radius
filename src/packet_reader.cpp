@@ -79,4 +79,60 @@ namespace RadProto
       return get_attribute_by_name(name);
     }
   }
+
+  ConstAttributePtr
+  PacketReader::get_attribute(const Dictionaries::AttributeKey& attribute_key)
+  {
+    if (attribute_key.vendor_id != 0)
+    {
+      for (const auto& attribute : packet_.vendorSpecific())
+      {
+        if (attribute.vendorId() == attribute_key.vendor_id &&
+          attribute.vendorType() == attribute_key.code)
+        {
+          auto attribute_type = dictionaries_.get_attribute_type(
+            attribute_key.code,
+            attribute_key.vendor_id);
+
+          if (attribute_type.has_value())
+          {
+            const auto plain_value = attribute.data();
+            return TypeDecoder::instance().decode(
+              attribute_key.code,
+              *attribute_type,
+              plain_value.data(),
+              plain_value.size(),
+              secret_,
+              packet_.auth());
+          }
+        }
+      }
+    }
+    else
+    {
+      for (const auto& attribute : packet_.attributes())
+      {
+        auto attribute_id = attribute->type();
+
+        if (attribute_id == attribute_key.code)
+        {
+          auto attribute_type = dictionaries_.get_attribute_type(attribute_id);
+
+          if (attribute_type.has_value())
+          {
+            auto plain_value = attribute->data(secret_, packet_.auth());
+            return TypeDecoder::instance().decode(
+              attribute_id,
+              *attribute_type,
+              plain_value.data(),
+              plain_value.size(),
+              secret_,
+              packet_.auth());
+          }
+        }
+      }
+    }
+
+    return ConstAttributePtr();
+  }
 }
