@@ -12,9 +12,10 @@ namespace RadProto
   class Socket
   {
   public:
-    Socket(boost::asio::io_service& io_service, const std::string& secret, uint16_t port);
-
-    void asyncReceive(
+    Socket(
+      boost::asio::io_service& io_service,
+      const std::string& secret,
+      uint16_t port,
       const std::function<void(const boost::system::error_code&, const std::optional<Packet>&, const boost::asio::ip::udp::endpoint&)>& callback);
 
     void asyncSend(
@@ -25,19 +26,23 @@ namespace RadProto
     void close(boost::system::error_code& ec);
 
   private:
-    void handleReceive(
+    void start_receive_loop_(
+      const std::function<void(const boost::system::error_code&, const std::optional<Packet>&, const boost::asio::ip::udp::endpoint&)>& callback);
+
+    void handle_receive_(
       const boost::system::error_code& error,
       std::size_t bytes,
       const std::function<void(const boost::system::error_code&, const std::optional<Packet>&, const boost::asio::ip::udp::endpoint&)>& callback);
 
-    void handleSend(
+    void handle_send_(
       const boost::system::error_code& ec,
       const std::function<void(const boost::system::error_code&)>& callback);
 
   private:
-    boost::asio::ip::udp::socket m_socket;
+    boost::asio::io_service& io_service_;
+    boost::asio::ip::udp::socket socket_;
     boost::asio::ip::udp::endpoint m_remoteEndpoint;
-    std::array<uint8_t, 4096> m_buffer;
+    std::array<uint8_t, 4096> recv_buffer_;
     std::string m_secret;
   };
 }

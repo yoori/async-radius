@@ -24,69 +24,98 @@ std::string packetTypeToString(int type)
     return "uncnown";
 }
 
-using Socket = RadProto::Socket;
-Socket::Socket(boost::asio::io_service& io_service, const std::string& secret, uint16_t port)
-    : m_socket(io_service, udp::endpoint(udp::v4(), port)),
+namespace RadProto
+{
+  Socket::Socket(
+    boost::asio::io_service& io_service,
+    const std::string& secret,
+    uint16_t port,
+    const std::function<void(const boost::system::error_code&, const std::optional<Packet>&, const udp::endpoint&)>& callback)
+    : io_service_(io_service),
+      socket_(io_service, udp::endpoint(udp::v4(), port)),
       m_secret(secret)
-{
-}
+  {
+    std::cout << "Socket: port = " << port << std::endl;
+    start_receive_loop_(callback);
+  }
 
-void Socket::asyncReceive(
-  const std::function<void(const error_code&, const std::optional<Packet>&, const udp::endpoint&)>& callback)
-{
-  m_socket.async_receive_from(
-    boost::asio::buffer(m_buffer),
-    m_remoteEndpoint,
-    [this, callback](const error_code& error, std::size_t bytes) {
-        handleReceive(error, bytes, callback);
-    }
-  );
-}
-
-void Socket::asyncSend(const Packet& response, const udp::endpoint& destination, const std::function<void(const error_code&)>& callback)
-{
+  void Socket::asyncSend(
+    const Packet& response,
+    const udp::endpoint& destination,
+    const std::function<void(const boost::system::error_code&)>& callback)
+  {
     const std::vector<uint8_t> vResponse = response.makeSendBuffer(m_secret);
-    std::copy(vResponse.begin(), vResponse.end(), m_buffer.begin());
 
-    m_socket.async_send_to(boost::asio::buffer(m_buffer, vResponse.size()), destination, [this, callback](const error_code& ec, std::size_t /*bytesTransferred*/) {handleSend(ec, callback);});
-}
+    io_service_.post(
+      [this, destination, callback, vResponse = std::move(vResponse)]
+      {
+        socket_.async_send_to(
+          boost::asio::buffer(vResponse),
+          destination,
+          [this, callback](const error_code& ec, std::size_t /*bytesTransferred*/)
+          {
+            handle_send_(ec, callback);
+          }
+        );
+      }
+    );
+  }
 
-void Socket::handleReceive(
-  const error_code& error,
-  std::size_t bytes,
-  const std::function<void(const error_code&, const std::optional<Packet>&, const udp::endpoint&)>& callback)
-{
+  void Socket::start_receive_loop_(
+    const std::function<void(const error_code&, const std::optional<Packet>&, const udp::endpoint&)>& callback)
+  {
+    std::cout << "Socket: start_receive_loop_" << std::endl;
+    io_service_.post(
+      [this, callback]
+      {
+        socket_.async_receive_from(
+          boost::asio::buffer(recv_buffer_),
+          m_remoteEndpoint,
+          [this, callback](const error_code& error, std::size_t bytes) {
+            std::cout << "Socket: async_receive_from" << std::endl;
+            handle_receive_(error, bytes, callback);
+          });
+      }
+    );
+  }
+
+  void Socket::handle_receive_(
+    const error_code& error,
+    std::size_t bytes,
+    const std::function<void(const error_code&, const std::optional<Packet>&, const udp::endpoint&)>& callback)
+  {
     if (error)
     {
-        callback(error, std::nullopt, m_remoteEndpoint);
+      callback(error, std::nullopt, m_remoteEndpoint);
     }
 
     if (bytes < 20)
     {
-        callback(Error::numberOfBytesIsLessThan20, std::nullopt, m_remoteEndpoint);
+      callback(Error::numberOfBytesIsLessThan20, std::nullopt, m_remoteEndpoint);
     }
 
     try
     {
-        callback(
-          error,
-          std::make_optional<Packet>(m_buffer.data(), bytes, m_secret),
-          m_remoteEndpoint);
+      callback(
+        error,
+        std::make_optional<Packet>(recv_buffer_.data(), bytes, m_secret),
+        m_remoteEndpoint);
     }
     catch (const Exception& exception)
     {
-        std::cerr << "exception: " << exception.what() << std::endl;
-        callback(exception.getErrorCode(), std::nullopt, m_remoteEndpoint);
+      std::cerr << "exception: " << exception.what() << std::endl;
+      callback(exception.getErrorCode(), std::nullopt, m_remoteEndpoint);
     }
-}
+  }
 
-void Socket::handleSend(const error_code& ec, const std::function<void(const error_code&)>& callback)
-{
+  void Socket::handle_send_(const error_code& ec, const std::function<void(const error_code&)>& callback)
+  {
     callback(ec);
-}
+  }
 
-void Socket::close(error_code& ec)
-{
-    m_socket.shutdown(udp::socket::shutdown_both, ec);
-    m_socket.close(ec);
+  void Socket::close(error_code& ec)
+  {
+    socket_.shutdown(udp::socket::shutdown_both, ec);
+    socket_.close(ec);
+  }
 }
