@@ -64,42 +64,56 @@ namespace RadProto
       }
     };
 
+    struct AttributeKeyHash
+    {
+      std::size_t operator()(const AttributeKey& attribute_key) const;
+    };
+
   public:
     Dictionaries(const std::string& filePath);
+
     void append(const Dictionaries& fillingDictionaries);
+
     const BasicDictionary& attributes() const { return m_attributes; }
+
     const BasicDictionary& vendorNames() const { return m_vendorNames; }
+
     const DependentDictionary& attributeValues() const { return m_attributeValues; }
+
     const DependentDictionary& vendorAttributes() const { return m_vendorAttributes; }
+
     const DependentDictionary& vendorAttributeValues() const;
 
     std::string attributeName(uint32_t code) const;
+
     uint32_t attributeCode(const std::string& name) const;
 
     std::string attributeTypeName(uint8_t code, uint32_t vendor_id = 0) const;
 
     std::string vendorName(uint32_t code) const;
+
     uint32_t vendorCode(const std::string& name) const;
 
     std::string vendorAttributeName(const std::string& vendorName, uint32_t code) const;
+
     uint32_t vendorAttributeCode(const std::string& vendorName, const std::string& name) const;
 
     std::string attributeValueName(const std::string& attributeName, uint32_t code) const;
+
     uint32_t attributeValueCode(const std::string& attributeName, const std::string& name) const;
 
     std::string vendorAttributeValueName(const std::string& valueName, uint32_t code) const;
+
     uint32_t vendorAttributeValueCode(const std::string& valueName, const std::string& name) const;
 
     std::optional<std::string> get_attribute_type(uint8_t code, uint32_t vendor_id = 0) const;
 
     void resolve();
 
-  private:
-    struct AttributeKeyHash
-    {
-      std::size_t operator()(const AttributeKey& attribute_key) const;
-    };
+    std::optional<AttributeKey>
+    get_attribute_key(const std::string& attribute_name, const std::string& vendor_name) const;
 
+  private:
     struct UnresolvedAttributeKey
     {
       uint8_t code = 0;

@@ -294,7 +294,8 @@ namespace RadProto
       return vendorAttributes().name(vendorName, code);
   }
 
-  uint32_t Dictionaries::vendorAttributeCode(const std::string& vendorName,const std::string& name) const
+  uint32_t
+  Dictionaries::vendorAttributeCode(const std::string& vendorName, const std::string& name) const
   {
     return vendorAttributes().code(vendorName, name);
   }
@@ -327,6 +328,23 @@ namespace RadProto
     {
       return it->second;
     }
+
+    return std::nullopt;
+  }
+
+  std::optional<Dictionaries::AttributeKey>
+  Dictionaries::get_attribute_key(
+    const std::string& attribute_name,
+    const std::string& vendor_name) const
+  {
+    try
+    {
+      auto vendor_id = vendorNames().code(vendor_name);
+      auto code = vendorAttributeCode(vendor_name, attribute_name);
+      return AttributeKey(code, vendor_id);
+    }
+    catch (const std::exception&)
+    {}
 
     return std::nullopt;
   }
