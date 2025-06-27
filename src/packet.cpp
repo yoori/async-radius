@@ -17,7 +17,7 @@ namespace
         const std::string& secret,
         const std::array<uint8_t, 16>& auth)
     {
-        std::cerr << "makeAttribute: type = " << static_cast<unsigned int>(type) << std::endl;
+      //std::cerr << "makeAttribute: type = " << static_cast<unsigned int>(type) << std::endl;
         if (type == 1 || type == 11 || type == 18 || type == 22 || type == 34 || type == 35 || type == 60 || type == 63)
             return new RadProto::String(type, data, size);
         else if (type == 2)
