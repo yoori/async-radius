@@ -7,24 +7,25 @@
 
 using boost::system::error_code;
 
-Server::Server(boost::asio::io_service& io_service, const std::string& secret, uint16_t port, const std::string& filePath)
-    : m_radius(io_service, secret, port),
-      m_dictionaries(filePath),
-      secret_(secret)
+Server::Server(
+  boost::asio::io_service& io_service,
+  const std::string& secret,
+  uint16_t port,
+  const std::string& filePath)
+  : m_radius(
+      io_service,
+      secret,
+      port,
+      [this](const auto& error, const auto& packet, const boost::asio::ip::udp::endpoint& source)
+      {
+        handle_receive(error, packet, source);
+      }
+    ),
+    m_dictionaries(filePath),
+    secret_(secret)
 {
   m_dictionaries.resolve(); // TODO: make this in Dictionaries c-tor, but use other class for included dictionaries
   std::cout << "To start receive" << std::endl;
-  startReceive();
-}
-
-void Server::startReceive()
-{
-  m_radius.asyncReceive(
-    [this](const auto& error, const auto& packet, const boost::asio::ip::udp::endpoint& source)
-    {
-      handleReceive(error, packet, source);
-    }
-  );
 }
 
 std::string ipv4_address_to_string(uint32_t ipv4)                                                                                                        
@@ -115,7 +116,7 @@ print_octets_attr(
   return res;
 }
 
-RadProto::Packet Server::makeResponse(const RadProto::Packet& request)
+RadProto::Packet Server::make_response(const RadProto::Packet& request)
 {
   RadProto::PacketReader packet_reader(request, m_dictionaries, secret_);
   std::cout << print_string_attr(packet_reader, "Calling-Station-Id") << std::endl;
@@ -187,29 +188,35 @@ RadProto::Packet Server::makeResponse(const RadProto::Packet& request)
   return RadProto::Packet(RadProto::ACCESS_REJECT, request.id(), request.auth(), attributes, vendorSpecific);
 }
 
-void Server::handleSend(const error_code& ec)
+void Server::handle_send(const error_code& ec)
 {
-    if (ec)
-        std::cout << "Error asyncSend: " << ec.message() << "\n";
-
-    startReceive();
+  if (ec)
+  {
+    std::cout << "Error asyncSend: " << ec.message() << std::endl;
+  }
 }
 
-void Server::handleReceive(const error_code& error, const std::optional<RadProto::Packet>& packet, const boost::asio::ip::udp::endpoint& source)
+void Server::handle_receive(
+  const error_code& error,
+  const std::optional<RadProto::Packet>& packet,
+  const boost::asio::ip::udp::endpoint& source)
 {
-    if (error)
-    {
-        std::cout << "Error asyncReceive: " << error.message() << "\n";
-        return;
-    }
+  if (error)
+  {
+    std::cout << "Error asyncReceive: " << error.message() << std::endl;
+    return;
+  }
 
-    if (packet == std::nullopt)
-    {
-        std::cout << "Error asyncReceive: the request packet is missing\n";
-        return;
-    }
-    else
-    {
-        m_radius.asyncSend(makeResponse(*packet), source, [this](const auto& ec){ handleSend(ec); });
-    }
+  if (packet == std::nullopt)
+  {
+    std::cout << "Error asyncReceive: the request packet is missing" << std::endl;
+    return;
+  }
+  else
+  {
+    m_radius.asyncSend(
+      make_response(*packet),
+      source,
+      [this](const auto& ec){ handle_send(ec); });
+  }
 }

@@ -17,16 +17,16 @@ public:
     const std::string& filePath);
 
 private:
-  RadProto::Packet makeResponse(const RadProto::Packet& request);
+  RadProto::Packet make_response(const RadProto::Packet& request);
 
-  void handleReceive(
+  void handle_receive(
     const boost::system::error_code& error,
     const std::optional<RadProto::Packet>& packet,
     const boost::asio::ip::udp::endpoint& source);
 
-  void handleSend(const boost::system::error_code& ec);
+  void handle_send(const boost::system::error_code& ec);
 
-  void startReceive();
+  //void startReceive();
 
 private:
   RadProto::Socket m_radius;

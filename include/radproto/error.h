@@ -5,48 +5,48 @@
 
 namespace RadProto
 {
-    class ErrorCategory: public boost::system::error_category
-    {
-        public:
-            const char* name() const noexcept;
-            std::string message(int ev) const noexcept;
-    };
+  class ErrorCategory: public boost::system::error_category
+  {
+  public:
+    const char* name() const noexcept;
+    std::string message(int ev) const noexcept;
+  };
 
-    enum class Error
-    {
-        success = 0,
+  enum class Error
+  {
+    success = 0,
 
-        numberOfBytesIsLessThan20,
-        requestLengthIsShort,
-        eapMessageAttributeError,
-        invalidAttributeType,
-        invalidAttributeSize,
-        invalidVendorSpecificAttributeId,
-        suchAttributeNameAlreadyExists,
-        suchAttributeCodeAlreadyExists
-    };
+    numberOfBytesIsLessThan20,
+    requestLengthIsShort,
+    eapMessageAttributeError,
+    invalidAttributeType,
+    invalidAttributeSize,
+    invalidVendorSpecificAttributeId,
+    suchAttributeNameAlreadyExists,
+    suchAttributeCodeAlreadyExists
+  };
 
-    class Exception: public std::runtime_error
-    {
-        public:
-            explicit Exception(const boost::system::error_code& errorCode, const std::string& message);
-            explicit Exception(const boost::system::error_code& errorCode);
-            boost::system::error_code getErrorCode() const {return m_errorCode;}
+  class Exception: public std::runtime_error
+  {
+  public:
+    explicit Exception(const boost::system::error_code& errorCode, const std::string& message);
+    explicit Exception(const boost::system::error_code& errorCode);
+    boost::system::error_code getErrorCode() const {return m_errorCode;}
 
-        private:
-            boost::system::error_code m_errorCode;
-    };
+  private:
+    boost::system::error_code m_errorCode;
+  };
 
-    boost::system::error_code make_error_code(Error);
+  boost::system::error_code make_error_code(Error);
 }
 
 namespace boost
 {
-    namespace system
+  namespace system
+  {
+    template <>
+    struct is_error_code_enum<::RadProto::Error> : std::true_type
     {
-        template <>
-        struct is_error_code_enum<::RadProto::Error> : std::true_type
-        {
-        };
-    }
+    };
+  }
 }
