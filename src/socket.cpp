@@ -33,7 +33,7 @@ namespace RadProto
     const std::function<void(const boost::system::error_code&, const std::optional<Packet>&, const udp::endpoint&)>& callback)
     : io_service_(io_service),
       socket_(io_service, udp::endpoint(udp::v4(), port)),
-      m_secret(secret)
+      secret_(secret)
   {
     std::cout << "Socket: port = " << port << std::endl;
     start_receive_loop_(callback);
@@ -44,7 +44,7 @@ namespace RadProto
     const udp::endpoint& destination,
     const std::function<void(const boost::system::error_code&)>& callback)
   {
-    const std::vector<uint8_t> vResponse = response.makeSendBuffer(m_secret);
+    const std::vector<uint8_t> vResponse = response.makeSendBuffer(secret_);
 
     io_service_.post(
       [this, destination, callback, vResponse = std::move(vResponse)]
@@ -61,22 +61,29 @@ namespace RadProto
     );
   }
 
-  void Socket::start_receive_loop_(
-    const std::function<void(const error_code&, const std::optional<Packet>&, const udp::endpoint&)>& callback)
+  void Socket::start_receive_loop_(const PacketProcessFun& callback)
   {
     std::cout << "Socket: start_receive_loop_" << std::endl;
     io_service_.post(
       [this, callback]
       {
-        socket_.async_receive_from(
-          boost::asio::buffer(recv_buffer_),
-          m_remoteEndpoint,
-          [this, callback](const error_code& error, std::size_t bytes) {
-            std::cout << "Socket: async_receive_from" << std::endl;
-            handle_receive_(error, bytes, callback);
-          });
+        order_receive_(callback);
       }
     );
+  }
+
+  void
+  Socket::order_receive_(const PacketProcessFun& callback)
+  {
+    std::cout << "Socket: order_receive_" << std::endl;
+    socket_.async_receive_from(
+      boost::asio::buffer(recv_buffer_),
+      remote_endpoint_,
+      [this, callback](const error_code& error, std::size_t bytes)
+      {
+        handle_receive_(error, bytes, callback);
+        order_receive_(callback);
+      });
   }
 
   void Socket::handle_receive_(
@@ -86,25 +93,25 @@ namespace RadProto
   {
     if (error)
     {
-      callback(error, std::nullopt, m_remoteEndpoint);
+      callback(error, std::nullopt, remote_endpoint_);
     }
 
     if (bytes < 20)
     {
-      callback(Error::numberOfBytesIsLessThan20, std::nullopt, m_remoteEndpoint);
+      callback(Error::numberOfBytesIsLessThan20, std::nullopt, remote_endpoint_);
     }
 
     try
     {
       callback(
         error,
-        std::make_optional<Packet>(recv_buffer_.data(), bytes, m_secret),
-        m_remoteEndpoint);
+        std::make_optional<Packet>(recv_buffer_.data(), bytes, secret_),
+        remote_endpoint_);
     }
     catch (const Exception& exception)
     {
       std::cerr << "exception: " << exception.what() << std::endl;
-      callback(exception.getErrorCode(), std::nullopt, m_remoteEndpoint);
+      callback(exception.getErrorCode(), std::nullopt, remote_endpoint_);
     }
   }
 

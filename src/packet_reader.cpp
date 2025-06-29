@@ -15,7 +15,7 @@ namespace RadProto
   {}
 
   ConstAttributePtr
-  PacketReader::get_attribute_by_name(const std::string& name)
+  PacketReader::get_attribute_by_name(const std::string& name) const
   {
     for (const auto& attribute : packet_.attributes())
     {
@@ -44,7 +44,7 @@ namespace RadProto
   }
 
   ConstAttributePtr
-  PacketReader::get_attribute_by_name(const std::string& name, const std::string& vendor_name)
+  PacketReader::get_attribute_by_name(const std::string& name, const std::string& vendor_name) const
   {
     if (!vendor_name.empty())
     {
@@ -81,7 +81,7 @@ namespace RadProto
   }
 
   ConstAttributePtr
-  PacketReader::get_attribute(const Dictionaries::AttributeKey& attribute_key)
+  PacketReader::get_attribute(const Dictionaries::AttributeKey& attribute_key) const
   {
     if (attribute_key.vendor_id != 0)
     {

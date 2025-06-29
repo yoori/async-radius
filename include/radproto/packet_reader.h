@@ -15,13 +15,13 @@ namespace RadProto
       std::string secret);
 
     ConstAttributePtr
-    get_attribute(const Dictionaries::AttributeKey& attribute_key);
+    get_attribute(const Dictionaries::AttributeKey& attribute_key) const;
 
     ConstAttributePtr
-    get_attribute_by_name(const std::string& name);
+    get_attribute_by_name(const std::string& name) const;
 
     ConstAttributePtr
-    get_attribute_by_name(const std::string& name, const std::string& vendor_name);
+    get_attribute_by_name(const std::string& name, const std::string& vendor_name) const;
 
   private:
     const Packet& packet_;
