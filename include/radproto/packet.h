@@ -27,7 +27,8 @@ namespace RadProto
       uint8_t id,
       const std::array<uint8_t, 16>& auth,
       const std::vector<Attribute*>& attributes,
-      const std::vector<VendorSpecific>& vendorSpecific);
+      const std::vector<VendorSpecific>& vendorSpecific,
+      bool recalc_auth = false);
 
     Packet(const Packet& other);
     ~Packet();

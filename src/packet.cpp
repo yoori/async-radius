@@ -115,10 +115,12 @@ Packet::Packet(
       throw Exception(Error::eapMessageAttributeError);
 }
 
-Packet::Packet(uint8_t type, uint8_t id, const std::array<uint8_t, 16>& auth, const std::vector<Attribute*>& attributes, const std::vector<VendorSpecific>& vendorSpecific)
+Packet::Packet(uint8_t type, uint8_t id, const std::array<uint8_t, 16>& auth, const std::vector<Attribute*>& attributes,
+    const std::vector<VendorSpecific>& vendorSpecific,
+    bool recalc_auth)
     : m_type(type),
       m_id(id),
-      m_recalcAuth(m_type == 2),
+      m_recalcAuth(m_type == 2 || recalc_auth), // TO RECHECK
       m_auth(auth),
       m_attributes(attributes),
       m_vendorSpecific(vendorSpecific)
@@ -166,7 +168,7 @@ const std::vector<uint8_t> Packet::makeSendBuffer(const std::string& secret) con
     sendBuffer[2] = sendBuffer.size() / 256 % 256;
     sendBuffer[3] = sendBuffer.size() % 256;
 
-    if (m_recalcAuth == true)
+    if (m_recalcAuth)
     {
         sendBuffer.resize(sendBuffer.size() + secret.length());
 
