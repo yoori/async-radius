@@ -115,12 +115,23 @@ Packet::Packet(
       throw Exception(Error::eapMessageAttributeError);
 }
 
+Packet::Packet(uint8_t type, uint8_t id, const std::vector<Attribute*>& attributes,
+    const std::vector<VendorSpecific>& vendorSpecific)
+    : m_type(type),
+      m_id(id),
+      m_recalcAuth(true),
+      m_auth{}, // fill auth with zeros
+      m_attributes(attributes),
+      m_vendorSpecific(vendorSpecific)
+{
+}
+
 Packet::Packet(uint8_t type, uint8_t id, const std::array<uint8_t, 16>& auth, const std::vector<Attribute*>& attributes,
     const std::vector<VendorSpecific>& vendorSpecific,
     bool recalc_auth)
     : m_type(type),
       m_id(id),
-      m_recalcAuth(m_type == 2 || recalc_auth), // TO RECHECK
+      m_recalcAuth(m_type == 2 || recalc_auth),
       m_auth(auth),
       m_attributes(attributes),
       m_vendorSpecific(vendorSpecific)
@@ -135,9 +146,13 @@ Packet::Packet(const Packet& other)
       m_vendorSpecific(other.m_vendorSpecific)
 
 {
-    for (const auto& a :  other.m_attributes)
-        if (a)
-            m_attributes.push_back(a->clone());
+  for (const auto& a :  other.m_attributes)
+  {
+    if (a)
+    {
+      m_attributes.push_back(a->clone());
+    }
+  }
 }
 
 Packet::~Packet()
@@ -154,17 +169,22 @@ const std::vector<uint8_t> Packet::makeSendBuffer(const std::string& secret) con
     sendBuffer[1] = m_id;
 
     for (size_t i = 0; i < m_auth.size(); ++i)
+    {
         sendBuffer[i + 4] = m_auth[i];
+    }
+
     for (const auto& attribute : m_attributes)
     {
         const auto aData = attribute->toVector(secret, m_auth);
         sendBuffer.insert(sendBuffer.end(), aData.begin(), aData.end());
     }
+
     for (const auto& vendorAttribute : m_vendorSpecific)
     {
         const auto aData = vendorAttribute.toVector();
         sendBuffer.insert(sendBuffer.end(), aData.begin(), aData.end());
     }
+
     sendBuffer[2] = sendBuffer.size() / 256 % 256;
     sendBuffer[3] = sendBuffer.size() % 256;
 
@@ -173,7 +193,9 @@ const std::vector<uint8_t> Packet::makeSendBuffer(const std::string& secret) con
         sendBuffer.resize(sendBuffer.size() + secret.length());
 
         for (size_t i = 0; i < secret.length(); ++i)
+        {
             sendBuffer[i + sendBuffer.size() - secret.length()] = secret[i];
+        }
 
         std::array<uint8_t, 16> md;
         MD5(sendBuffer.data(), sendBuffer.size(), md.data());

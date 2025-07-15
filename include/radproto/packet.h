@@ -22,13 +22,23 @@ namespace RadProto
       size_t size,
       const std::string& secret);
 
+    // request packet
+    Packet(
+      uint8_t type,
+      uint8_t id,
+      const std::vector<Attribute*>& attributes,
+      const std::vector<VendorSpecific>& vendorSpecific);
+
+    // response packet,
+    // auth : authenticator of request should be passed here
     Packet(
       uint8_t type,
       uint8_t id,
       const std::array<uint8_t, 16>& auth,
       const std::vector<Attribute*>& attributes,
       const std::vector<VendorSpecific>& vendorSpecific,
-      bool recalc_auth = false);
+      bool recalc_auth = false
+      );
 
     Packet(const Packet& other);
     ~Packet();
