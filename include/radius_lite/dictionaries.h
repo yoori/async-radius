@@ -6,7 +6,7 @@
 #include <optional>
 #include <unordered_map>
 
-namespace RadProto
+namespace radius_lite
 {
   class BasicDictionary
   {
@@ -148,7 +148,7 @@ namespace RadProto
   };
 }
 
-namespace RadProto
+namespace radius_lite
 {
   inline const DependentDictionary&
   Dictionaries::vendorAttributeValues() const

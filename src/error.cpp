@@ -1,7 +1,7 @@
 #include "error.h"
 #include <string>
 
-using Exception = RadProto::Exception;
+using Exception = radius_lite::Exception;
 Exception::Exception(const boost::system::error_code& errorCode, const std::string& message)
     : std::runtime_error(message),
       m_errorCode(errorCode)
@@ -14,13 +14,13 @@ Exception::Exception(const boost::system::error_code& errorCode)
 {
 }
 
-using ErrorCategory = RadProto::ErrorCategory;
+using ErrorCategory = radius_lite::ErrorCategory;
 const char* ErrorCategory::name() const noexcept
 {
     return "radproto";
 }
 
-using Error = RadProto::Error;
+using Error = radius_lite::Error;
 std::string ErrorCategory::message(int ev) const noexcept
 {
     switch (static_cast<Error>(ev))
@@ -48,7 +48,7 @@ std::string ErrorCategory::message(int ev) const noexcept
     }
 }
 
-boost::system::error_code RadProto::make_error_code(Error e)
+boost::system::error_code radius_lite::make_error_code(Error e)
 {
     static const ErrorCategory instance;
     return boost::system::error_code(static_cast<int>(e), instance);

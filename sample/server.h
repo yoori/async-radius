@@ -17,11 +17,11 @@ public:
     const std::string& filePath);
 
 private:
-  RadProto::Packet make_response(const RadProto::Packet& request);
+  radius_lite::Packet make_response(const radius_lite::Packet& request);
 
   void handle_receive(
     const boost::system::error_code& error,
-    const std::optional<RadProto::Packet>& packet,
+    const std::optional<radius_lite::Packet>& packet,
     const boost::asio::ip::udp::endpoint& source);
 
   void handle_send(const boost::system::error_code& ec);
@@ -29,7 +29,7 @@ private:
   //void startReceive();
 
 private:
-  RadProto::Socket m_radius;
-  RadProto::Dictionaries m_dictionaries;
+  radius_lite::Socket m_radius;
+  radius_lite::Dictionaries m_dictionaries;
   std::string secret_;
 };

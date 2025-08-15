@@ -6,24 +6,22 @@
 #include <algorithm>
 #include <iostream>
 
-namespace RadProto
+namespace radius_lite
 {
   Attribute::Attribute(uint8_t type)
     : m_type(type)
-  {
-  }
+  {}
 
+  // String impl
   String::String(uint8_t type, const uint8_t* data, size_t size)
     : Attribute(type),
       m_value(reinterpret_cast<const char*>(data), size)
-  {
-  }
+  {}
 
   String::String(uint8_t type, const std::string& string)
     : Attribute(type),
       m_value(string)
-  {
-  }
+  {}
 
   ByteArray
   String::data(const std::string& /*secret*/, const std::array<uint8_t, 16>& /*auth*/) const
@@ -33,24 +31,28 @@ namespace RadProto
 
   String* String::clone() const
   {
-      return new String(*this);
+    return new String(*this);
   }
 
+  // IpAddress impl
   IpAddress::IpAddress(uint8_t type, const uint8_t* data, size_t size)
-          : Attribute(type)
+    : Attribute(type)
   {
-      if (size != 4)
-          throw RadProto::Exception(RadProto::Error::invalidAttributeSize);
+    if (size != 4)
+    {
+      throw radius_lite::Exception(radius_lite::Error::invalidAttributeSize);
+    }
 
-      for (size_t i = 0; i < size; ++i)
-          m_value[i] = data[i];
+    for (size_t i = 0; i < size; ++i)
+    {
+      m_value[i] = data[i];
+    }
   }
 
   IpAddress::IpAddress(uint8_t type, const std::array<uint8_t, 4>& address)
-      : Attribute(type),
-        m_value(address)
-  {
-  }
+    : Attribute(type),
+      m_value(address)
+  {}
 
   std::string
   IpAddress::toString() const
@@ -93,7 +95,7 @@ namespace RadProto
   {
     if (size > 128)
     {
-      throw RadProto::Exception(RadProto::Error::invalidAttributeSize);
+      throw radius_lite::Exception(radius_lite::Error::invalidAttributeSize);
     }
 
     std::vector<uint8_t> mdBuffer(auth.size() + secret.length());
@@ -125,8 +127,7 @@ namespace RadProto
   Encrypted::Encrypted(uint8_t type, const std::string& password)
     : Attribute(type),
       m_value(password)
-  {
-  }
+  {}
 
   ByteArray
   Encrypted::data(const std::string& secret, const std::array<uint8_t, 16>& auth) const
@@ -187,17 +188,18 @@ namespace RadProto
   Bytes::Bytes(uint8_t type, const std::vector<uint8_t>& bytes)
     : Attribute(type),
       m_value(bytes)
-  {
-  }
+  {}
 
   std::string Bytes::toString() const
   {
-      std::string value;
+    std::string value;
 
-      for (const auto& b : m_value)
-          value += byteToHex(b);
+    for (const auto& b : m_value)
+    {
+      value += byteToHex(b);
+    }
 
-      return value;
+    return value;
   }
 
   ByteArray
@@ -218,7 +220,7 @@ namespace RadProto
   {
     if (size != 17)
     {
-      throw RadProto::Exception(RadProto::Error::invalidAttributeSize);
+      throw radius_lite::Exception(radius_lite::Error::invalidAttributeSize);
     }
 
     m_chapId = data[0];

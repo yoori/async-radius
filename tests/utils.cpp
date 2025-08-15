@@ -1,11 +1,14 @@
 #include "utils.h"
 
-RadProto::Attribute* findAttribute(const std::vector<RadProto::Attribute*>& attributes, RadProto::Attribute_Types type)
+radius_lite::Attribute*
+findAttribute(const std::vector<radius_lite::Attribute*>& attributes, radius_lite::Attribute_Types type)
 {
-    for (const auto& b : attributes)
+  for (const auto& b : attributes)
+  {
+    if (b->type() == type)
     {
-        if (b->type() == type)
-            return b;
+      return b;
     }
-    return nullptr;
+  }
+  return nullptr;
 }

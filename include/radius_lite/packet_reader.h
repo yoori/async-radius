@@ -4,7 +4,7 @@
 #include "dictionaries.h"
 #include "packet.h"
 
-namespace RadProto
+namespace radius_lite
 {
   class PacketReader
   {

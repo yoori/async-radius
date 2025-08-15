@@ -2,7 +2,7 @@
 
 #include "attribute.h"
 
-namespace RadProto
+namespace radius_lite
 {
   class TypeDecoder
   {
@@ -19,7 +19,7 @@ namespace RadProto
 
   private:
     using BaseTypeDecoder = std::function<
-      RadProto::AttributePtr(
+      radius_lite::AttributePtr(
         unsigned int attribute_id,
         const uint8_t* data,
         size_t size,

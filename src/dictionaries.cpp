@@ -9,9 +9,9 @@
 #include "dictionaries.h"
 #include "error.h"
 
-namespace RadProto
+namespace radius_lite
 {
-  std::size_t RadProto::Dictionaries::AttributeKeyHash::operator()(const AttributeKey& attribute_key) const
+  std::size_t radius_lite::Dictionaries::AttributeKeyHash::operator()(const AttributeKey& attribute_key) const
   {
     std::size_t seed = 0;
     boost::hash_combine(seed, attribute_key.code);
@@ -19,7 +19,7 @@ namespace RadProto
     return seed;
   };
 
-  std::size_t RadProto::Dictionaries::UnresolvedAttributeKeyHash::operator()(
+  std::size_t radius_lite::Dictionaries::UnresolvedAttributeKeyHash::operator()(
     const UnresolvedAttributeKey& attribute_key) const
   {
     std::size_t seed = 0;

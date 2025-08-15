@@ -3,7 +3,7 @@
 #include "packet_reader.h"
 #include "type_decoder.h"
 
-namespace RadProto
+namespace radius_lite
 {
   PacketReader::PacketReader(
     const Packet& packet,

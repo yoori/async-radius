@@ -9,7 +9,7 @@
 #include <string>
 #include <cstdint> //uint8_t, uint32_t
 
-namespace RadProto
+namespace radius_lite
 {
   class Packet
   {

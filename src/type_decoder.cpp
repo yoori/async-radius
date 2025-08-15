@@ -1,10 +1,10 @@
 #include "attribute.h"
 #include "type_decoder.h"
 
-namespace RadProto
+namespace radius_lite
 {
   template<typename IntType>
-  std::function<RadProto::AttributePtr(
+  std::function<radius_lite::AttributePtr(
     unsigned int attribute_id,
     const uint8_t* data,
     size_t size,
@@ -19,7 +19,7 @@ namespace RadProto
       const std::string&,
       const std::array<uint8_t, 16>&)
     {
-      return std::make_shared<RadProto::Integer<IntType>>(attribute_id, data, size);
+      return std::make_shared<radius_lite::Integer<IntType>>(attribute_id, data, size);
     };
     return fun;
   }
@@ -55,7 +55,7 @@ namespace RadProto
         const std::string&,
         const std::array<uint8_t, 16>&)
       {
-        return std::make_shared<RadProto::String>(attribute_id, data, size);
+        return std::make_shared<radius_lite::String>(attribute_id, data, size);
       }
     );
     base_type_decoders_.emplace(
@@ -67,12 +67,12 @@ namespace RadProto
         const std::string&,
         const std::array<uint8_t, 16>&)
       {
-        return std::make_shared<RadProto::IpAddress>(attribute_id, data, size);
+        return std::make_shared<radius_lite::IpAddress>(attribute_id, data, size);
       }
     );
   }
 
-  RadProto::AttributePtr TypeDecoder::decode(
+  radius_lite::AttributePtr TypeDecoder::decode(
     unsigned int attribute_id,
     const std::string& type_name,
     const uint8_t* data,
@@ -86,7 +86,7 @@ namespace RadProto
       return decoder_it->second(attribute_id, data, size, secret, auth);
     }
 
-    return std::make_shared<RadProto::Bytes>(attribute_id, data, size);
+    return std::make_shared<radius_lite::Bytes>(attribute_id, data, size);
   }
 
   const TypeDecoder&

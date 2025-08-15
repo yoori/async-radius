@@ -39,7 +39,7 @@ std::string ipv4_address_to_string(uint32_t ipv4)
 
 std::string
 print_uint_attr(
-  RadProto::PacketReader& packet_reader,
+  radius_lite::PacketReader& packet_reader,
   const std::string& attr_name,
   const std::string& vendor_name = std::string())
 {
@@ -61,7 +61,7 @@ std::string byteToHex(uint8_t byte)
 
 std::string
 print_ipv4_attr(
-  RadProto::PacketReader& packet_reader,
+  radius_lite::PacketReader& packet_reader,
   const std::string& attr_name,
   const std::string& vendor_name = std::string())
 {
@@ -79,7 +79,7 @@ print_ipv4_attr(
 
 std::string
 print_string_attr(
-  RadProto::PacketReader& packet_reader,
+  radius_lite::PacketReader& packet_reader,
   const std::string& attr_name,
   const std::string& vendor_name = std::string())
 {
@@ -95,7 +95,7 @@ print_string_attr(
 
 std::string
 print_octets_attr(
-  RadProto::PacketReader& packet_reader,
+  radius_lite::PacketReader& packet_reader,
   const std::string& attr_name,
   const std::string& vendor_name = std::string())
 {
@@ -116,9 +116,9 @@ print_octets_attr(
   return res;
 }
 
-RadProto::Packet Server::make_response(const RadProto::Packet& request)
+radius_lite::Packet Server::make_response(const radius_lite::Packet& request)
 {
-  RadProto::PacketReader packet_reader(request, m_dictionaries, secret_);
+  radius_lite::PacketReader packet_reader(request, m_dictionaries, secret_);
   std::cout << print_string_attr(packet_reader, "Calling-Station-Id") << std::endl;
   std::cout << print_string_attr(packet_reader, "Called-Station-Id") << std::endl;
   std::cout << print_ipv4_attr(packet_reader, "Framed-IP-Address") << std::endl;
@@ -164,28 +164,28 @@ RadProto::Packet Server::make_response(const RadProto::Packet& request)
   }
   */
 
-  std::vector<RadProto::Attribute*> attributes;
-  attributes.push_back(new RadProto::String(m_dictionaries.attributeCode("User-Name"), "test"));
-  attributes.push_back(new RadProto::Integer<uint32_t>(m_dictionaries.attributeCode("NAS-Port"), 20));
+  std::vector<radius_lite::Attribute*> attributes;
+  attributes.push_back(new radius_lite::String(m_dictionaries.attributeCode("User-Name"), "test"));
+  attributes.push_back(new radius_lite::Integer<uint32_t>(m_dictionaries.attributeCode("NAS-Port"), 20));
   std::array<uint8_t, 4> address {127, 104, 22, 17};
-  attributes.push_back(new RadProto::IpAddress(m_dictionaries.attributeCode("NAS-IP-Address"), address));
+  attributes.push_back(new radius_lite::IpAddress(m_dictionaries.attributeCode("NAS-IP-Address"), address));
   std::vector<uint8_t> bytes {'1', '2', '3', 'a', 'b', 'c'};
-  attributes.push_back(new RadProto::Bytes(m_dictionaries.attributeCode("Callback-Number"), bytes));
+  attributes.push_back(new radius_lite::Bytes(m_dictionaries.attributeCode("Callback-Number"), bytes));
   std::vector<uint8_t> chapPassword {'1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g' };
-  attributes.push_back(new RadProto::ChapPassword(m_dictionaries.attributeCode("CHAP-Password"), 1, chapPassword));
+  attributes.push_back(new radius_lite::ChapPassword(m_dictionaries.attributeCode("CHAP-Password"), 1, chapPassword));
 
-  std::vector<RadProto::VendorSpecific> vendorSpecific;
+  std::vector<radius_lite::VendorSpecific> vendorSpecific;
   /*
   std::vector<uint8_t> vendorValue {0, 0, 0, 3};
-  vendorSpecific.push_back(RadProto::VendorSpecific(m_dictionaries.vendorCode("Dlink"), m_dictionaries.vendorAttributeCode("Dlink", "Dlink-User-Level"), vendorValue));
+  vendorSpecific.push_back(radius_lite::VendorSpecific(m_dictionaries.vendorCode("Dlink"), m_dictionaries.vendorAttributeCode("Dlink", "Dlink-User-Level"), vendorValue));
   */
 
-  if (request.type() == RadProto::ACCESS_REQUEST)
+  if (request.type() == radius_lite::ACCESS_REQUEST)
   {
-    return RadProto::Packet(RadProto::ACCESS_ACCEPT, request.id(), request.auth(), attributes, vendorSpecific);
+    return radius_lite::Packet(radius_lite::ACCESS_ACCEPT, request.id(), request.auth(), attributes, vendorSpecific);
   }
 
-  return RadProto::Packet(RadProto::ACCESS_REJECT, request.id(), request.auth(), attributes, vendorSpecific);
+  return radius_lite::Packet(radius_lite::ACCESS_REJECT, request.id(), request.auth(), attributes, vendorSpecific);
 }
 
 void Server::handle_send(const error_code& ec)
@@ -198,7 +198,7 @@ void Server::handle_send(const error_code& ec)
 
 void Server::handle_receive(
   const error_code& error,
-  const std::optional<RadProto::Packet>& packet,
+  const std::optional<radius_lite::Packet>& packet,
   const boost::asio::ip::udp::endpoint& source)
 {
   if (error)

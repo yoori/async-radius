@@ -5,14 +5,14 @@
 #include "attribute_types.h"
 #include <iostream>
 
-using VendorSpecific = RadProto::VendorSpecific;
+using VendorSpecific = radius_lite::VendorSpecific;
 
-namespace RadProto
+namespace radius_lite
 {
   VendorSpecific::VendorSpecific(const uint8_t* data)
   {
     if (data[0] != 0)
-        throw RadProto::Exception(RadProto::Error::invalidVendorSpecificAttributeId);
+        throw radius_lite::Exception(radius_lite::Error::invalidVendorSpecificAttributeId);
 
     m_vendorId = data[0] * (1 << 24)
                + data[1] * (1 << 16)

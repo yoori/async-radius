@@ -6,11 +6,11 @@
 #include <iostream>
 #include <iomanip>
 
-using Packet = RadProto::Packet;
+using Packet = radius_lite::Packet;
 
 namespace
 {
-    RadProto::Attribute* makeAttribute(
+    radius_lite::Attribute* makeAttribute(
         uint8_t type,
         const uint8_t* data,
         size_t size,
@@ -19,19 +19,19 @@ namespace
     {
       //std::cerr << "makeAttribute: type = " << static_cast<unsigned int>(type) << std::endl;
         if (type == 1 || type == 11 || type == 18 || type == 22 || type == 34 || type == 35 || type == 60 || type == 63)
-            return new RadProto::String(type, data, size);
+            return new radius_lite::String(type, data, size);
         else if (type == 2)
-            return new RadProto::Encrypted(type, data, size, secret, auth);
+            return new radius_lite::Encrypted(type, data, size, secret, auth);
         else if (type == 3)
-            return new RadProto::ChapPassword(type, data, size);
+            return new radius_lite::ChapPassword(type, data, size);
         else if (type == 4 || type == 8 || type == 9 || type == 14)
-            return new RadProto::IpAddress(type, data, size);
+            return new radius_lite::IpAddress(type, data, size);
         else if (type == 5 || type == 6 || type == 7 || type == 10 || type == 12 || type == 13 || type == 15 || type == 16 || type == 27 || type == 28 || type == 29 || type == 37 || type == 38 || type == 61 || type == 62)
-            return new RadProto::Integer<uint64_t>(type, data, size);
+            return new radius_lite::Integer<uint64_t>(type, data, size);
         else
-            return new RadProto::Bytes(type, data, size);
+            return new radius_lite::Bytes(type, data, size);
 
-        throw RadProto::Exception(RadProto::Error::invalidAttributeType);
+        throw radius_lite::Exception(radius_lite::Error::invalidAttributeType);
     }
 }
 

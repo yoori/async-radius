@@ -21,9 +21,9 @@ target_link_libraries(${PROJECT_NAME}
   Threads::Threads)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/radproto>
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include/radius_lite>
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/>
-  $<INSTALL_INTERFACE:include/radproto>
+  $<INSTALL_INTERFACE:include/radius_lite>
   $<INSTALL_INTERFACE:include>
 )

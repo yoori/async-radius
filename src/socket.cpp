@@ -12,19 +12,19 @@ std::string packetTypeToString(int type)
 {
     switch (type)
     {
-        case RadProto::ACCESS_REQUEST: return "ACCESS_REQUEST";
-        case RadProto::ACCESS_ACCEPT: return "ACCESS_ACCEPT";
-        case RadProto::ACCESS_REJECT: return "ACCESS_REJECT";
-        case RadProto::ACCOUNTING_REQUEST: return "ACCOUNTING_REQUEST";
-        case RadProto::ACCOUNTING_RESPONSE: return "ACCOUNTING_RESPONSE";
-        case RadProto::ACCESS_CHALLENGE: return "ACCESS_CHALLENGE";
-        case RadProto::STATUS_SERVER: return "STATUS_SERVER";
-        case RadProto::STATUS_CLIENT: return "STATUS_CLIENT";
+        case radius_lite::ACCESS_REQUEST: return "ACCESS_REQUEST";
+        case radius_lite::ACCESS_ACCEPT: return "ACCESS_ACCEPT";
+        case radius_lite::ACCESS_REJECT: return "ACCESS_REJECT";
+        case radius_lite::ACCOUNTING_REQUEST: return "ACCOUNTING_REQUEST";
+        case radius_lite::ACCOUNTING_RESPONSE: return "ACCOUNTING_RESPONSE";
+        case radius_lite::ACCESS_CHALLENGE: return "ACCESS_CHALLENGE";
+        case radius_lite::STATUS_SERVER: return "STATUS_SERVER";
+        case radius_lite::STATUS_CLIENT: return "STATUS_CLIENT";
     }
     return "uncnown";
 }
 
-namespace RadProto
+namespace radius_lite
 {
   Socket::Socket(
     boost::asio::io_service& io_service,

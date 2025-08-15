@@ -7,7 +7,7 @@
 #include <functional>
 #include <optional>
 
-namespace RadProto
+namespace radius_lite
 {
   class Socket
   {

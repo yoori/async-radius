@@ -6,7 +6,7 @@
 
 #include "types.h"
 
-namespace RadProto
+namespace radius_lite
 {
   class VendorSpecific
   {

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace RadProto
+namespace radius_lite
 {
   enum Attribute_Types
   {

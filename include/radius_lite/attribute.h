@@ -10,7 +10,7 @@
 #include "error.h"
 #include "types.h"
 
-namespace RadProto
+namespace radius_lite
 {
   class Attribute
   {
@@ -147,7 +147,7 @@ namespace RadProto
   using AttributePtr = std::shared_ptr<Attribute>;
 }
 
-namespace RadProto
+namespace radius_lite
 {
   // Attribute inlines
   inline std::optional<int64_t>
@@ -189,7 +189,7 @@ namespace RadProto
   {
     if (size > sizeof(IntType))
     {
-      throw RadProto::Exception(RadProto::Error::invalidAttributeSize);
+      throw radius_lite::Exception(radius_lite::Error::invalidAttributeSize);
     }
 
     if (size == 8 || size == 4 || size == 2 || size == 1)
@@ -201,7 +201,7 @@ namespace RadProto
     }
     else
     {
-      throw RadProto::Exception(RadProto::Error::invalidAttributeSize);
+      throw radius_lite::Exception(radius_lite::Error::invalidAttributeSize);
     }
   }
 
